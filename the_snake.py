@@ -79,7 +79,7 @@ class GameObject:
             position (tuple(x, y)): Координаты положения ячейки.
             color (tuple, (0, 0, 0)): Необязательный параметр цвета (RGB).
         """
-        cell_color = color if color is not None else self.body_color
+        cell_color = color or self.body_color
         cell_rect = (pg.Rect(position, (GRID_SIZE, GRID_SIZE)))
         pg.draw.rect(screen, cell_color, cell_rect)
         pg.draw.rect(screen, border_color, cell_rect, 1)
@@ -103,7 +103,6 @@ class Snake(GameObject):
         reset(method): Возврат змейки в исходное состояние.
         """
         super().__init__(position, body_color)
-        self.positions = [CENTER_COORDINATES]
         self.reset()
 
     def move(self):
@@ -136,8 +135,11 @@ class Snake(GameObject):
         """Отрисовывает тело змейки."""
         # Затирание последнего сегмента
         if self.last:
-            self.draw_cell(self.last, BOARD_BACKGROUND_COLOR,
-                           BOARD_BACKGROUND_COLOR)
+            self.draw_cell(
+                self.last,
+                BOARD_BACKGROUND_COLOR,
+                BOARD_BACKGROUND_COLOR
+            )
 
         # Отрисовка головы змейки
         self.draw_cell(self.get_head_position())
@@ -163,8 +165,11 @@ class Apple(GameObject):
     GameObject (object): класс-родитель.
     """
 
-    def __init__(self, position=CENTER_COORDINATES, body_color=PINK_COLOR,
-                 banned_positions=None):
+    def __init__(
+        self,
+        position=CENTER_COORDINATES,
+        body_color=PINK_COLOR
+    ):
         """Инициализирует базовые атрибуты объекта.
 
         Args:
@@ -173,8 +178,6 @@ class Apple(GameObject):
         banned_positions(list): Список занятых змейкой координат поля.
         """
         super().__init__(position, body_color)
-        if banned_positions is None:
-            self.banned_positions = [CENTER_COORDINATES]
 
     def randomize_position(self, banned_positions):
         """Задает случайные координаты новому яблоку на игровом поле.
@@ -193,7 +196,8 @@ class Apple(GameObject):
             rect_y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
             new_position = (rect_x, rect_y)
             if new_position not in banned_positions:
-                return new_position
+                self.position = new_position
+                break
 
     def draw(self):
         """Отрисовывает яблоко на игровом поле."""
@@ -223,8 +227,8 @@ def main():
     pg.init()
     screen.fill(BOARD_BACKGROUND_COLOR)
     snake = Snake(body_color=SNAKE_COLOR)
-    apple = Apple(body_color=APPLE_COLOR, banned_positions=snake.positions)
-    apple.position = apple.randomize_position(snake.positions)
+    apple = Apple(body_color=APPLE_COLOR)
+    apple.randomize_position(snake.positions)
     apple.draw()
     while True:
         handle_keys(snake)
@@ -232,14 +236,12 @@ def main():
         if snake.get_head_position() in snake.positions[1:]:
             snake.reset()
             screen.fill(BOARD_BACKGROUND_COLOR)
-            apple.position = apple.randomize_position(snake.positions)
-            apple.draw()
-            continue
+            apple.randomize_position(snake.positions)
         if snake.get_head_position() == apple.position:
             snake.length += 1
-            apple.position = apple.randomize_position(snake.positions)
-            apple.draw()
+            apple.randomize_position(snake.positions)
         snake.draw()
+        apple.draw()
         pg.display.update()
         clock.tick(SPEED)
 
